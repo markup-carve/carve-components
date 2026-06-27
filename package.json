@@ -50,7 +50,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@markup-carve/carve": "file:vendor/markup-carve-carve-0.1.0.tgz"
+    "@markup-carve/carve": "github:markup-carve/carve-js#ed1baa27de60961cee6e8991a9b50106112aea0b"
   },
   "peerDependencies": {
     "react": ">=18",
