@@ -82,11 +82,11 @@ If you fully trust the input and want raw-HTML passthrough, pass
 | ` ```=html ` block with `<script>`     | escaped text                     |
 | bare `<script>...</script>` line       | escaped text                     |
 
-## carve-js dependency (vendored)
+## carve-js dependency (bundled)
 
-carve-js (`@markup-carve/carve`) is published only via git and runs a `prepare`
-(`tsc`) build on git install, which makes `npm ci` depend on a working
-toolchain and network. To keep `npm ci` and the build reproducible and offline,
-this package vendors a prebuilt carve-js tarball under `vendor/` and depends on
-it with a `file:` specifier. Re-vendor by running `npm pack` in the carve-js
-checkout into `vendor/` and bumping the version in `package.json`.
+carve-js (`@markup-carve/carve`) is a **build-time** dependency only: `tsup`
+bundles it into this package's `dist/` (`noExternal`), so the published package
+is self-contained and consumers do not install carve-js separately. It is
+therefore a `devDependency` (pinned to a carve-js git commit), not a runtime
+dependency. Bump the pinned commit in `devDependencies` and rebuild to pick up a
+newer engine.

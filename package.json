@@ -49,9 +49,6 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {
-    "@markup-carve/carve": "github:markup-carve/carve-js#ed1baa27de60961cee6e8991a9b50106112aea0b"
-  },
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18",
@@ -69,6 +66,7 @@
     }
   },
   "devDependencies": {
+    "@markup-carve/carve": "github:markup-carve/carve-js#ed1baa27de60961cee6e8991a9b50106112aea0b",
     "@testing-library/react": "^16.1.0",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
