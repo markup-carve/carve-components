@@ -8,8 +8,8 @@ markup.
 ## Install
 
 ```bash
-npm install carve-components react react-dom   # React
-npm install carve-components vue               # Vue
+npm install @markup-carve/carve-components react react-dom   # React
+npm install @markup-carve/carve-components vue               # Vue
 ```
 
 `react` / `react-dom` (>=18) and `vue` (>=3) are optional peer dependencies.
