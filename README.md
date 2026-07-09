@@ -19,7 +19,7 @@ ever loading Vue and vice versa.
 ## React
 
 ```tsx
-import { Carve, useCarveHtml } from "carve-components/react";
+import { Carve, useCarveHtml } from "@markup-carve/carve-components/react";
 
 <Carve source="# Hello\n\n*bold* and /italic/" />
 <Carve source={src} as="article" className="prose" options={{ allowRawHtml: true }} />
@@ -36,7 +36,7 @@ is injected via `dangerouslySetInnerHTML`.
 
 ```vue
 <script setup lang="ts">
-import { Carve, useCarveHtml } from "carve-components/vue";
+import { Carve, useCarveHtml } from "@markup-carve/carve-components/vue";
 const html = useCarveHtml(() => src);
 </script>
 
