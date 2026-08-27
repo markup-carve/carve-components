@@ -4,6 +4,10 @@
   "description": "React and Vue components that render Carve markup to safe HTML via carve-js",
   "license": "MIT",
   "author": "Mark Scherer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/markup-carve/carve-components"
+  },
   "type": "module",
   "sideEffects": false,
   "files": [
