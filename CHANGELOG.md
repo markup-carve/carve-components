@@ -6,6 +6,14 @@ Rendering is done by the Carve engine (`@markup-carve/carve`), so an engine
 change can alter output with no plugin diff. Engine bumps therefore get an
 entry of their own.
 
+## 0.1.1 - 2026-09-21
+
+### Changed
+
+- Bundles carve-js 0.1.7, where 0.1.0 bundled 0.1.4 (#15). The build compiles
+  the engine into `dist/`, so rendered output follows it; see the carve-js
+  changelog for 0.1.5, 0.1.6 and 0.1.7.
+
 ## 0.1.0 - 2026-08-18
 
 First release.

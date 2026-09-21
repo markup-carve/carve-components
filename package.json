@@ -1,6 +1,6 @@
 {
   "name": "@markup-carve/carve-components",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React and Vue components that render Carve markup to safe HTML via carve-js",
   "license": "MIT",
   "author": "Mark Scherer",
