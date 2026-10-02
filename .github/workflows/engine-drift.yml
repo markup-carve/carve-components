@@ -31,9 +31,13 @@ on:
     - cron: "0 5 * * *"
   workflow_dispatch:
 
+# Jobs carry an explicit timeout-minutes: without one GitHub applies a
+# 360-minute default, long enough for a stalled job to go unnoticed.
+
 jobs:
   engine-drift:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
