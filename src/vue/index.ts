@@ -2,15 +2,29 @@ import {
   computed,
   defineComponent,
   h,
+  useAttrs,
   type ComputedRef,
   type MaybeRefOrGetter,
   type PropType,
 } from "vue";
 import { toValue } from "vue";
-import { renderCarveHtml, type CarveOptions } from "../core/index.js";
+import {
+  renderCarveHtml,
+  renderCarveHtmlWithReport,
+  type CarveOptions,
+  type CarveReportOptions,
+  type CarveRenderResult,
+  CARVE_ENGINE_VERSION,
+  CARVE_SPEC_VERSION,
+} from "../core/index.js";
 
-export type { CarveOptions };
-export { renderCarveHtml };
+export type { CarveOptions, CarveReportOptions, CarveRenderResult };
+export {
+  renderCarveHtml,
+  renderCarveHtmlWithReport,
+  CARVE_ENGINE_VERSION,
+  CARVE_SPEC_VERSION,
+};
 
 /**
  * Vue composable: reactive Carve -> HTML rendering.
@@ -34,6 +48,11 @@ export function useCarveHtml(
  */
 export const Carve = defineComponent({
   name: "Carve",
+  // Attributes are applied by hand, after the rendered HTML, so a fallthrough
+  // `innerHTML` cannot replace it. Under the default fallthrough an attribute
+  // bag spread onto the component (`v-bind="attrs"`) won that collision and
+  // put unsanitized markup in the wrapper, which the React side never allowed.
+  inheritAttrs: false,
   props: {
     source: {
       type: String,
@@ -49,7 +68,8 @@ export const Carve = defineComponent({
     },
   },
   setup(props) {
+    const attrs = useAttrs();
     const html = computed(() => renderCarveHtml(props.source, props.options));
-    return () => h(props.as, { innerHTML: html.value });
+    return () => h(props.as, { ...attrs, innerHTML: html.value });
   },
 });
