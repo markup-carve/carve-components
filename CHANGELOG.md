@@ -6,6 +6,35 @@ Rendering is done by the Carve engine (`@markup-carve/carve`), so an engine
 change can alter output with no plugin diff. Engine bumps therefore get an
 entry of their own.
 
+## [Unreleased]
+
+### Added
+
+- `renderCarveHtmlWithReport`, exported from `./core`, `./react` and `./vue`:
+  the same HTML as `renderCarveHtml` plus carve-js's render-loss report. It is
+  the only way to see that URL sanitization blanked a destination, which the
+  HTML records as nothing more than an empty `href`. carve-js 0.1.10 added the
+  `destination-denied` loss row this surfaces.
+- `CARVE_ENGINE_VERSION` and `CARVE_SPEC_VERSION`. The engine is bundled into
+  `dist/`, so a consumer could not previously tell which engine rendered their
+  page or name one in a bug report.
+
+### Fixed
+
+- A fallthrough `innerHTML` attribute on the Vue `<Carve>` replaced the
+  rendered HTML, so an attribute bag spread onto the component could put
+  unsanitized markup in the wrapper. Attributes are now applied before the
+  rendered HTML, as the React component already did. Ordinary attributes
+  (`class`, `id`, `data-*`) still fall through.
+
+### Changed
+
+- Bundles carve-js 0.1.10, where 0.1.1 bundled 0.1.7. A list item now ends on a
+  block the author wrote past its content column, so a flush-left line below an
+  over-indented heading, table row or thematic break renders as a document-level
+  paragraph instead of folding into the item. See the carve-js changelog for
+  0.1.8, 0.1.9 and 0.1.10.
+
 ## 0.1.1 - 2026-09-21
 
 ### Changed

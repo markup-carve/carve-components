@@ -75,6 +75,26 @@ it. Two carve-js knobs matter:
 If you fully trust the input and want raw-HTML passthrough, pass
 `options={{ allowRawHtml: true }}`.
 
+### Knowing what was blanked
+
+A blanked URL leaves no trace in the HTML beyond an empty `href`.
+`renderCarveHtmlWithReport` returns the same HTML with carve-js's render-loss
+report beside it, so an application can log or warn instead of silently
+serving an inert link.
+
+```ts
+import { renderCarveHtmlWithReport } from "@markup-carve/carve-components/core";
+
+const { value, losses } = renderCarveHtmlWithReport(source);
+for (const loss of losses) {
+  // { code: "destination-denied", message: "Blanked a denied destination scheme", ... }
+  console.warn(loss.code, loss.message, loss.pos);
+}
+```
+
+`strictLosses: true` throws instead of returning, and `maxRenderLosses` caps
+the rows while `totalLosses` keeps the full count.
+
 | Hostile input                          | Default component output         |
 | -------------------------------------- | -------------------------------- |
 | `[x](javascript:alert(1))`             | `<a href="">x</a>` (inert)       |
@@ -88,5 +108,13 @@ carve-js (`@markup-carve/carve`) is a **build-time** dependency only: `tsup`
 bundles it into this package's `dist/` (`noExternal`), so the published package
 is self-contained and consumers do not install carve-js separately. It is
 therefore a `devDependency` (pinned to a carve-js git commit), not a runtime
-dependency. Bump the pinned commit in `devDependencies` and rebuild to pick up a
-newer engine.
+dependency. Bump the range in `devDependencies`, refresh the lockfile and
+rebuild to pick up a newer engine.
+
+Because the engine is compiled in, a consumer cannot read its version from
+their own dependency tree. `CARVE_ENGINE_VERSION` (and `CARVE_SPEC_VERSION`)
+report it, from every entry point:
+
+```ts
+import { CARVE_ENGINE_VERSION } from "@markup-carve/carve-components/react";
+```

@@ -36,6 +36,13 @@ jobs:
 
       - run: npm ci
 
+      # The package ships types, and the engine's own types move under it: the
+      # render-loss row became a discriminated union in carve-js 0.1.10. tsup's
+      # dts build emits declarations without failing on a type error, so the
+      # build alone does not check them.
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Build
         run: npm run build
 

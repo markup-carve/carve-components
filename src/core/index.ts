@@ -1,4 +1,20 @@
-import { carveToHtml } from "@markup-carve/carve";
+import {
+  carveToHtml,
+  carveToHtmlWithReport,
+  LIB_VERSION,
+  SPEC_VERSION,
+} from "@markup-carve/carve";
+
+/**
+ * Version of the carve-js engine compiled into this package's `dist/`, and the
+ * Carve spec version it implements.
+ *
+ * The engine is bundled, so a consumer cannot read it from their own
+ * dependency tree, and rendered output follows it. Without these a bug report
+ * has no way to say which engine answered.
+ */
+export const CARVE_ENGINE_VERSION: string = LIB_VERSION;
+export const CARVE_SPEC_VERSION: string = SPEC_VERSION;
 
 /**
  * Options forwarded to carve-js when rendering Carve source to HTML.
@@ -52,4 +68,37 @@ export function renderCarveHtml(source: string, options?: CarveOptions): string 
   return carveToHtml(source, { ...SAFE_DEFAULTS, ...options });
 }
 
-export { carveToHtml };
+/**
+ * Options accepted by `renderCarveHtmlWithReport`: the render options above
+ * plus carve-js's checked-render knobs (`strictLosses`, `maxRenderLosses`).
+ */
+export type CarveReportOptions = NonNullable<
+  Parameters<typeof carveToHtmlWithReport>[1]
+>;
+
+/**
+ * The report carve-js returns alongside the HTML: the rendered string in
+ * `value`, plus a row per structural loss the render incurred.
+ */
+export type CarveRenderResult = ReturnType<typeof carveToHtmlWithReport>;
+
+/**
+ * Render Carve source to HTML and keep carve-js's render-loss report.
+ *
+ * Same HTML as `renderCarveHtml` for the same input and options, so this is a
+ * drop-in when a caller needs to know what the render dropped rather than only
+ * what it produced. The row that matters most here is `destination-denied`:
+ * URL sanitization blanks a dangerous scheme silently in the HTML (the link
+ * stays, its href is `""`), and this is the only way to see it happened.
+ */
+export function renderCarveHtmlWithReport(
+  source: string,
+  options?: CarveReportOptions,
+): CarveRenderResult {
+  if (source == null || source === "") {
+    return { value: "", losses: [], totalLosses: 0, truncated: false };
+  }
+  return carveToHtmlWithReport(source, { ...SAFE_DEFAULTS, ...options });
+}
+
+export { carveToHtml, carveToHtmlWithReport };

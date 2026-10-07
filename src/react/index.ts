@@ -7,10 +7,23 @@ import {
   type ForwardedRef,
   type ReactElement,
 } from "react";
-import { renderCarveHtml, type CarveOptions } from "../core/index.js";
+import {
+  renderCarveHtml,
+  renderCarveHtmlWithReport,
+  type CarveOptions,
+  type CarveReportOptions,
+  type CarveRenderResult,
+  CARVE_ENGINE_VERSION,
+  CARVE_SPEC_VERSION,
+} from "../core/index.js";
 
-export type { CarveOptions };
-export { renderCarveHtml };
+export type { CarveOptions, CarveReportOptions, CarveRenderResult };
+export {
+  renderCarveHtml,
+  renderCarveHtmlWithReport,
+  CARVE_ENGINE_VERSION,
+  CARVE_SPEC_VERSION,
+};
 
 /**
  * React hook: memoized Carve -> HTML rendering.
