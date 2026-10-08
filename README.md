@@ -104,15 +104,17 @@ the rows while `totalLosses` keeps the full count.
 
 ## carve-js dependency (bundled)
 
-carve-js (`@markup-carve/carve`) is a **build-time** dependency only: `tsup`
-bundles it into this package's `dist/` (`noExternal`), so the published package
-is self-contained and consumers do not install carve-js separately. It is
-therefore a `devDependency` (pinned to a carve-js git commit), not a runtime
-dependency. Bump the range in `devDependencies`, refresh the lockfile and
-rebuild to pick up a newer engine.
+carve-js (`@markup-carve/carve`) is a regular `dependency`, but the JavaScript
+does not load it at runtime: `tsup` bundles the engine into this package's
+`dist/` (`noExternal`). The dependency is there for the type declarations,
+which import the engine's types (`CarveOptions`, `carveToHtml`, ...), so a
+consumer gets an installed copy of carve-js that TypeScript resolves. Bump the
+range in `dependencies`, refresh the lockfile and rebuild to pick up a newer
+engine.
 
-Because the engine is compiled in, a consumer cannot read its version from
-their own dependency tree. `CARVE_ENGINE_VERSION` (and `CARVE_SPEC_VERSION`)
+Because the engine is compiled in, its version cannot be read from the
+consumer's dependency tree: the installed copy can be a newer release within
+the range than the one in `dist/`. `CARVE_ENGINE_VERSION` (and `CARVE_SPEC_VERSION`)
 report it, from every entry point:
 
 ```ts
