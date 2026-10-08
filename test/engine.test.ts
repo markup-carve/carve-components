@@ -94,6 +94,18 @@ describe("render-loss report (carve#2432)", () => {
     });
   });
 
+  // The early return above is a hand-written copy of the engine's own empty
+  // report, so a field the engine adds to the shape would be dropped here and
+  // the literal assertion could not see it.
+  it("the empty-source short circuit matches what the engine returns", async () => {
+    const { carveToHtmlWithReport } = await import("@markup-carve/carve");
+    for (const source of ["", "   \n\t\n"]) {
+      expect(renderCarveHtmlWithReport(source)).toEqual(
+        carveToHtmlWithReport(source, { allowRawHtml: false, sanitizeUrls: true }),
+      );
+    }
+  });
+
   it("passes the checked-render knobs through", () => {
     expect(() =>
       renderCarveHtmlWithReport("[x](javascript:1)", { strictLosses: true }),
