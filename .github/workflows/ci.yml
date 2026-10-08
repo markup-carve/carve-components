@@ -48,3 +48,8 @@ jobs:
 
       - name: Test
         run: npm test
+
+      # Packs the build and type-checks a fresh consumer with skipLibCheck off.
+      # Fails if the engine the declarations import does not arrive with it.
+      - name: Packed types
+        run: npm run check:packed-types
