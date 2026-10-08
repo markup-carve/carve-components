@@ -1,16 +1,32 @@
-name: Release
+name: Release packages and assets
 
 on:
-  push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-  # Dispatch is aimed at the TAG, not a branch: every gate below reads the
-  # version from GITHUB_REF_NAME, so a run dispatched at refs/tags/X.Y.Z behaves
-  # exactly like the tag push, and the publish still waits on the release
-  # environment. Without it a version whose tag already exists has no way to run
-  # at all, because recreating a tag under the same name fires no push event:
-  # 0.1.2 sat tagged with npm serving 0.1.1 and no way to retry.
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      publish:
+        required: true
+        type: boolean
+      tag:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      release_tag:
+        required: true
+        type: string
+      source_sha:
+        required: true
+        type: string
+      release_id:
+        required: true
+        type: string
+      release_body:
+        required: true
+        type: string
+      notes_digest:
+        required: true
+        type: string
 
 # Jobs carry an explicit timeout-minutes: without one GitHub applies a
 # 360-minute default, long enough for a stalled job to go unnoticed.
@@ -23,6 +39,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+      - name: Expose the candidate tag locally
+        if: ${{ !inputs.publish }}
+        shell: bash
+        env:
+          CANDIDATE_TAG: ${{ inputs.tag }}
+        run: |
+          git tag "$CANDIDATE_TAG" "${{ inputs.source_sha }}"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -134,6 +160,7 @@ jobs:
       # it. See markup-carve/carve-wasm#80.
       contents: write
       id-token: write
+      actions: read
     steps:
       # GATE: the notes are not the workflow's to write. A CHANGELOG entry is
       # deliberately one or two lines for a contributor, which makes poor
@@ -144,26 +171,49 @@ jobs:
       # not a git ref, so addressing one by tag can match nothing, change
       # nothing and still exit 0.
       - name: A release draft for this tag exists and has notes
-        if: github.event_name != 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           release="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
-            --jq "[.[] | select(.tag_name == \"$GITHUB_REF_NAME\")] | first")"
+            --jq "[.[] | select(.tag_name == \"$LANE_TAG\")] | first")"
           if [ -z "$release" ]; then
-            echo "::error::no release for $GITHUB_REF_NAME. Write the notes first:" \
-                 "gh release create $GITHUB_REF_NAME --draft --notes-file NOTES.md"
+            echo "::error::no release for $LANE_TAG. Write the notes first:" \
+                 "gh release create $LANE_TAG --draft --notes-file NOTES.md"
             echo "::error::if a draft DOES exist, this job could not see it -" \
                  "check that the job still declares contents: write"
             exit 1
           fi
           body="$(printf '%s' "$release" | jq -r '.body // ""' | tr -d '[:space:]')"
           [ -n "$body" ] \
-            || { echo "::error::the release for $GITHUB_REF_NAME has no notes"; exit 1; }
+            || { echo "::error::the release for $LANE_TAG has no notes"; exit 1; }
           printf '%s' "$release" | jq -r '"draft=\(.draft) tag=\(.tag_name)"'
 
+        if: ${{ inputs.publish }}
       - uses: actions/checkout@v4
 
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Verify approval and checked tag before publishing
+        working-directory: ${{ github.workspace }}
+        if: ${{ inputs.publish }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_SHA: ${{ inputs.source_sha }}
+          RELEASE_NOTES_DIGEST: ${{ inputs.notes_digest }}
+        run: python .github/scripts/release-lane.py permit
+      - name: Expose the candidate tag locally
+        if: ${{ !inputs.publish }}
+        shell: bash
+        env:
+          CANDIDATE_TAG: ${{ inputs.tag }}
+        run: |
+          git tag "$CANDIDATE_TAG" "${{ inputs.source_sha }}"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -183,7 +233,7 @@ jobs:
       # belt and braces for a hand-pushed tag or a later pattern change.
       - name: The tag matches every version surface
         run: |
-          tag="${GITHUB_REF_NAME#v}"
+          tag="${LANE_TAG#v}"
           fail=0
           check() {
             if [ "$2" != "$tag" ]; then
@@ -203,7 +253,12 @@ jobs:
       - run: npm test
 
       - name: Publish to npm
-        run: npm publish --access public --provenance
+        run: |
+          if [ "$LANE_PUBLISH" = true ]; then
+            npm publish --access public --provenance
+          else
+            npm publish --dry-run --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -216,24 +271,13 @@ jobs:
       #
       # Last, deliberately: a draft that stays a draft is recoverable, and one
       # published beside a failed publish is not.
-      - name: Publish the release notes
-        if: github.event_name != 'workflow_dispatch'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          id="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
-            --jq "[.[] | select(.tag_name == \"$GITHUB_REF_NAME\" and .draft)] | first | .id // empty")"
-          if [ -z "$id" ]; then
-            echo "No draft release for $GITHUB_REF_NAME; nothing to publish."
-            exit 0
-          fi
-          # `tag_name` goes with every PATCH of a release. Omit it on a DRAFT
-          # and GitHub replaces the tag with a generated `untagged-*`
-          # placeholder, because a draft's tag is a string on the object rather
-          # than a git ref - so the field has nothing to fall back to.
-          # `-F` (not `-f`) for draft, so it is sent as a boolean.
-          gh api "repos/$GITHUB_REPOSITORY/releases/$id" -X PATCH \
-            -f tag_name="$GITHUB_REF_NAME" -F draft=false --jq '"published \(.tag_name)"'
-          # Read it back: exit status does not tell you whether the tag survived.
-          gh api "repos/$GITHUB_REPOSITORY/releases/$id" \
-            --jq '"draft=\(.draft) tag=\(.tag_name)"'
+        shell: bash
+permissions:
+  contents: write
+  actions: read
+  id-token: write
+env:
+  LANE_TAG: ${{ inputs.tag }}
+  LANE_REF: ${{ format('refs/tags/{0}', inputs.tag) }}
+  LANE_REF_TYPE: tag
+  LANE_PUBLISH: ${{ inputs.publish }}
