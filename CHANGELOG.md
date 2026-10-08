@@ -29,6 +29,12 @@ entry of their own.
 
 ### Changed
 
+- The carve-js engine is now a runtime dependency rather than a development one.
+  `dist/` still bundles it, so the installed copy serves only the published
+  declarations, which import the engine by name and could not resolve for a
+  consumer type-checking with `skipLibCheck: false`. The installed copy can be a
+  newer 0.1.x than the one compiled in, which is what `CARVE_ENGINE_VERSION`
+  reports
 - Bundles carve-js 0.1.10, where 0.1.1 bundled 0.1.7. A list item now ends on a
   block the author wrote past its content column, so a flush-left line below an
   over-indented heading, table row or thematic break renders as a document-level
