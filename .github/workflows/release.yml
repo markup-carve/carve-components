@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
+  # Dispatch is aimed at the TAG, not a branch: every gate below reads the
+  # version from GITHUB_REF_NAME, so a run dispatched at refs/tags/X.Y.Z behaves
+  # exactly like the tag push, and the publish still waits on the release
+  # environment. Without it a version whose tag already exists has no way to run
+  # at all, because recreating a tag under the same name fires no push event:
+  # 0.1.2 sat tagged with npm serving 0.1.1 and no way to retry.
+  workflow_dispatch:
 
 # Jobs carry an explicit timeout-minutes: without one GitHub applies a
 # 360-minute default, long enough for a stalled job to go unnoticed.
