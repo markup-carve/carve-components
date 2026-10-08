@@ -8,6 +8,8 @@ entry of their own.
 
 ## [Unreleased]
 
+## 0.1.2 - 2026-10-08
+
 ### Added
 
 - `renderCarveHtmlWithReport`, exported from `./core`, `./react` and `./vue`:
