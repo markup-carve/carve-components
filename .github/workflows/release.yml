@@ -13,8 +13,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to publish, without v; leave empty for rehearsal
-        required: false
+        description: Version to release, without v
+        required: true
         type: string
 
 # Jobs carry an explicit timeout-minutes: without one GitHub applies a
@@ -132,6 +132,7 @@ jobs:
     needs:
       - npm-credential
       - tag
+      - release-checks
     permissions:
       # `write`, not `read`, and the gate below is the whole reason: a DRAFT
       # release is invisible to a caller without push access, so under
