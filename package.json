@@ -55,7 +55,7 @@
     "check:packed-types": "node scripts/check-packed-types.mjs"
   },
   "dependencies": {
-    "@markup-carve/carve": "^0.1.10"
+    "@markup-carve/carve": "^0.1.13"
   },
   "peerDependencies": {
     "react": ">=18",
