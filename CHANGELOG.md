@@ -8,10 +8,12 @@ entry of their own.
 
 ## [Unreleased]
 
+## 0.1.3 - 2026-10-23
+
 ### Changed
 
 - Bundles `@markup-carve/carve` 0.1.13 (floor `^0.1.13`), so rendered output
-  follows that engine's parser fixes; `CARVE_ENGINE_VERSION` reports it.
+  follows that engine's parser fixes; `CARVE_ENGINE_VERSION` reports it (#35).
 
 ## 0.1.2 - 2026-10-08
 
