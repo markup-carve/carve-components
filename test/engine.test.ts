@@ -43,6 +43,17 @@ describe("engine behavior reaching the rendered HTML", () => {
     expect(html).toContain('data-task-state="x"');
   });
 
+  it("braced cell alignment sets the cell style, and the glued marker still reads (carve#5091)", () => {
+    const html = renderCarveHtml("|={>} a |=< b |\n|{>} 1 | 2 |");
+    expect(html).toContain('<th scope="col" style="text-align: right;">a</th>');
+    expect(html).toContain('<th scope="col" style="text-align: left;">b</th>');
+    expect(html).toContain('<td style="text-align: right;">1</td>');
+  });
+
+  it("an erased comment line does not split a paragraph (carve#5012)", () => {
+    expect(renderCarveHtml("a\n%% c\nb")).toBe("<p>a\nb</p>");
+  });
+
   it("raw HTML is escaped under the library default and emitted when asked", () => {
     const src = "```=html\n<script>alert(1)</script>\n```";
     expect(renderCarveHtml(src)).toContain("&lt;script&gt;");
