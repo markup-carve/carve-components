@@ -20,7 +20,9 @@ const run = (cmd, args, cwd) =>
 let failed = false;
 try {
   const packed = JSON.parse(run("npm", ["pack", "--json", "--pack-destination", work], root));
-  const tarball = join(work, packed[0].filename);
+  // npm 12 keys the pack report by package name; earlier majors return an array.
+  const entry = Array.isArray(packed) ? packed[0] : packed[pkg.name];
+  const tarball = join(work, entry.filename);
 
   const project = join(work, "consumer");
   mkdirSync(project);

@@ -36,6 +36,13 @@ describe("engine behavior reaching the rendered HTML", () => {
     expect(renderCarveHtml("![alt][label]" + def)).not.toContain("<img");
   });
 
+  it("progress and blocked task states reach the HTML (carve-js#3588)", () => {
+    const html = renderCarveHtml("- [/] doing\n- [!] stuck\n- [x] done");
+    expect(html).toContain('data-task-state="/"');
+    expect(html).toContain('data-task-state="!"');
+    expect(html).toContain('data-task-state="x"');
+  });
+
   it("raw HTML is escaped under the library default and emitted when asked", () => {
     const src = "```=html\n<script>alert(1)</script>\n```";
     expect(renderCarveHtml(src)).toContain("&lt;script&gt;");
