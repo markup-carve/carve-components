@@ -94,6 +94,7 @@ describe("React and Vue render the same HTML", () => {
     denied: "[x](javascript:alert(1))",
     hostile: "```=html\n<script>alert(1)</script>\n```",
     table: "| a | b |\n|---|---|\n| 1 | 2 |",
+    "native table": "|= a |= b |\n| 1 | 2 |",
     footnote: "x[^1]\n\n[^1]: note",
   };
 
