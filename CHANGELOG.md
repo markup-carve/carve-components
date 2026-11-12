@@ -8,7 +8,7 @@ entry of their own.
 
 ## [Unreleased]
 
-## 0.1.4 - 2026-11-11
+## 0.1.4 - 2026-11-12
 
 ### Changed
 
