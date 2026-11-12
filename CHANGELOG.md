@@ -8,6 +8,18 @@ entry of their own.
 
 ## [Unreleased]
 
+## 0.1.4 - 2026-11-12
+
+### Changed
+
+- Bundles `@markup-carve/carve` 0.1.16 (floor `^0.1.16`), so rendered output
+  follows the carve-js 0.1.14 to 0.1.16 fixes; `CARVE_ENGINE_VERSION` reports
+  it (#38, #39).
+- Progress `[/]` and blocked `[!]` task items render as task states (#38).
+- Braced cell alignment (`|={>}`) is honored; the old glued `|=>` still
+  renders (#39).
+- An erased `%%` comment line no longer splits the paragraph around it (#39).
+
 ## 0.1.3 - 2026-10-23
 
 ### Changed
