@@ -55,7 +55,10 @@
     "check:packed-types": "node scripts/check-packed-types.mjs"
   },
   "dependencies": {
-    "@markup-carve/carve": "^0.1.16"
+    "@markup-carve/carve": "git+https://github.com/markup-carve/carve-js.git#df089eeeaf48e36f89c8e926710e1c1e1bd2def1"
+  },
+  "allowScripts": {
+    "git+https://github.com/markup-carve/carve-js.git#df089eeeaf48e36f89c8e926710e1c1e1bd2def1": true
   },
   "peerDependencies": {
     "react": ">=18",
