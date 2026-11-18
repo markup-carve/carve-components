@@ -8,6 +8,15 @@ entry of their own.
 
 ## [Unreleased]
 
+### Changed
+
+- The React and Vue components now render through the Carve 0.2 engine pinned
+  to a commit on its `next2` branch.
+- Component options use the 0.2 `RenderOptions` names, including `rawHtml` and
+  `urlPolicy`. The safe defaults disable raw HTML and pin the denied URL schemes.
+- The checked rendering helper now returns the 0.2 diagnostic result with
+  `html`, `diagnostics` and `suppressedDiagnostics` fields.
+
 ## 0.1.4 - 2026-11-12
 
 ### Changed

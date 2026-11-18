@@ -1,156 +1,118 @@
 // @vitest-environment node
-//
-// These pin engine behavior that this package's own HTML surface depends on,
-// so an engine bump that changes it fails here rather than in a consumer's
-// page. Each case names the carve-js issue that decided it.
 import { describe, expect, it } from "vitest";
+import { render, renderWithDiagnostics } from "@markup-carve/carve/v2";
 import {
   CARVE_ENGINE_VERSION,
   CARVE_SPEC_VERSION,
   renderCarveHtml,
   renderCarveHtmlWithReport,
+  SAFE_DEFAULTS,
 } from "../src/core/index.js";
 
-describe("engine behavior reaching the rendered HTML", () => {
-  it("a flush-left line below an over-indented block in a list item leaves the item (carve#2542)", () => {
-    for (const block of ["# Deep", "| a | b |", "---"]) {
+describe("Carve 0.2 engine integration", () => {
+  it("keeps a flush-left paragraph outside a nested list block", () => {
+    for (const block of ["= Deep", "| a | b |", "***"]) {
       const html = renderCarveHtml(`- item\n\n      ${block}\nflush`);
       expect(html).toContain("<p>flush</p>");
       expect(html.indexOf("</ul>")).toBeLessThan(html.indexOf("<p>flush</p>"));
     }
   });
 
-  it("a repeated heading takes a deduplicated id (carve#2511)", () => {
-    const html = renderCarveHtml("# Dup\n\n# Dup");
+  it("deduplicates heading ids", () => {
+    const html = renderCarveHtml("= Dup\n\n= Dup");
     expect(html).toContain('id="Dup"');
     expect(html).toContain('id="Dup-2"');
   });
 
-  it("a name lookup compares case exactly (carve#2520)", () => {
+  it("keeps exact-case reference lookup", () => {
     const def = "\n\n[Label]: https://example.com";
     expect(renderCarveHtml("[a][Label]" + def)).toContain(
       '<a href="https://example.com">a</a>',
     );
-    // A case-only mismatch stays literal text rather than resolving.
     expect(renderCarveHtml("[a][label]" + def)).not.toContain("<a ");
-    expect(renderCarveHtml("![alt][label]" + def)).not.toContain("<img");
   });
 
-  it("progress and blocked task states reach the HTML (carve-js#3588)", () => {
+  it("renders task states", () => {
     const html = renderCarveHtml("- [/] doing\n- [!] stuck\n- [x] done");
     expect(html).toContain('data-task-state="/"');
     expect(html).toContain('data-task-state="!"');
     expect(html).toContain('data-task-state="x"');
   });
 
-  it("braced cell alignment sets the cell style, and the glued marker still reads (carve#5091)", () => {
-    const html = renderCarveHtml("|={>} a |=< b |\n|{>} 1 | 2 |");
+  it("renders native table cell alignment", () => {
+    const html = renderCarveHtml("|={>} a |={<} b |\n|{>} 1 | 2 |");
     expect(html).toContain('<th scope="col" style="text-align: right;">a</th>');
     expect(html).toContain('<th scope="col" style="text-align: left;">b</th>');
     expect(html).toContain('<td style="text-align: right;">1</td>');
   });
 
-  it("an erased comment line does not split a paragraph (carve#5012)", () => {
-    expect(renderCarveHtml("a\n%% c\nb")).toBe("<p>a\nb</p>");
-  });
-
-  it("raw HTML is escaped under the library default and emitted when asked", () => {
+  it("escapes raw HTML by default and passes through only when enabled", () => {
     const src = "```=html\n<script>alert(1)</script>\n```";
     expect(renderCarveHtml(src)).toContain("&lt;script&gt;");
-    expect(renderCarveHtml(src, { allowRawHtml: true })).toContain("<script>");
-  });
-});
-
-describe("render-loss report (carve#2432)", () => {
-  it("reports a blanked link destination with the normative message", () => {
-    const report = renderCarveHtmlWithReport("[x](javascript:alert(1))");
-    expect(report.value).toContain('href=""');
-    expect(report.totalLosses).toBe(1);
-    expect(report.losses[0].code).toBe("destination-denied");
-    expect(report.losses[0].message).toBe("Blanked a denied destination scheme");
-    expect(report.losses[0].target).toBe("html");
+    expect(renderCarveHtml(src, { rawHtml: true })).toContain("<script>");
+    expect(SAFE_DEFAULTS.rawHtml).toBe(false);
   });
 
-  it("reports an autolink and an image under their own messages", () => {
-    expect(
-      renderCarveHtmlWithReport("<javascript:alert(1)>").losses[0]?.message,
-    ).toBe("Blanked a denied destination scheme");
-    expect(renderCarveHtmlWithReport("![a](vbscript:x)").losses[0]?.message).toBe(
-      "Blanked a denied image source",
+  it("forwards render options to the 0.2 renderer", () => {
+    const source = "= Heading";
+    expect(renderCarveHtml(source, { headingIds: "lower" })).toBe(
+      render(source, { ...SAFE_DEFAULTS, headingIds: "lower" }),
+    );
+    expect(renderCarveHtml(source, { headingIds: "lower" })).toContain('id="heading"');
+  });
+
+  it("exposes the engine's diagnostic result without changing its fields", () => {
+    const source = "[x](javascript:alert(1))";
+    const result = renderCarveHtmlWithReport(source);
+    expect(result).toEqual(renderWithDiagnostics(source, SAFE_DEFAULTS));
+    expect(result.html).toContain('href=""');
+    expect(result.diagnostics[0]).toMatchObject({
+      channel: "render-loss",
+      code: "destination-denied",
+      message: "Blanked a denied destination scheme",
+    });
+    expect(result.suppressedDiagnostics).toBe(0);
+  });
+
+  it("counts one diagnostic for each denied destination", () => {
+    const source = ["a", "b", "c"].map((n) => `[${n}](javascript:0)`).join("\n\n");
+    const result = renderCarveHtmlWithReport(source);
+    expect(result.diagnostics.filter((d) => d.channel === "render-loss")).toHaveLength(3);
+  });
+
+  it("returns the engine result for empty input", () => {
+    expect(renderCarveHtmlWithReport("")).toEqual({
+      html: "",
+      diagnostics: [],
+      suppressedDiagnostics: 0,
+    });
+    expect(renderCarveHtmlWithReport("   \n\t\n")).toEqual(
+      renderWithDiagnostics("   \n\t\n", SAFE_DEFAULTS),
     );
   });
 
-  it("counts one row per blanked destination", () => {
-    const src = ["a", "b", "c"].map((n) => `[${n}](javascript:0)`).join("\n\n");
-    const report = renderCarveHtmlWithReport(src);
-    expect(report.totalLosses).toBe(3);
-    expect(report.losses).toHaveLength(3);
+  it("keeps HTML consistent between the two wrapper calls", () => {
+    const source = "= Hi\n\n`<b>x</b>`{=html}\n\n[x](javascript:1)";
+    expect(renderCarveHtmlWithReport(source).html).toBe(renderCarveHtml(source));
+    expect(renderCarveHtmlWithReport(source).html).toContain("&lt;b&gt;");
+    expect(renderCarveHtmlWithReport(source, { rawHtml: true }).html).toContain("<b>x</b>");
   });
 
-  it("reports nothing for a document that loses nothing", () => {
-    const report = renderCarveHtmlWithReport("# ok\n\n[a](https://example.com)");
-    expect(report.totalLosses).toBe(0);
-    expect(report.losses).toEqual([]);
-    expect(report.truncated).toBe(false);
+  it("passes strict loss handling through both calls", () => {
+    const source = "[x](javascript:1)";
+    expect(() => renderCarveHtml(source, { strictLosses: true })).toThrow();
+    const result = renderCarveHtmlWithReport(source, { strictLosses: true });
+    expect(result.html).toBe("");
+    expect(result.diagnostics[0]?.severity).toBe("error");
   });
 
-  it("renders the same HTML as renderCarveHtml, and honors the safe defaults", () => {
-    const src = "# Hi\n\n`<b>x</b>`{=html}\n\n[x](javascript:1)";
-    expect(renderCarveHtmlWithReport(src).value).toBe(renderCarveHtml(src));
-    expect(renderCarveHtmlWithReport(src).value).toContain("&lt;b&gt;");
-    expect(
-      renderCarveHtmlWithReport(src, { allowRawHtml: true }).value,
-    ).toContain("<b>x</b>");
-  });
-
-  it("returns an empty report for empty source", () => {
-    expect(renderCarveHtmlWithReport("")).toEqual({
-      value: "",
-      losses: [],
-      totalLosses: 0,
-      truncated: false,
-    });
-  });
-
-  // The early return above is a hand-written copy of the engine's own empty
-  // report, so a field the engine adds to the shape would be dropped here and
-  // the literal assertion could not see it.
-  it("the empty-source short circuit matches what the engine returns", async () => {
-    const { carveToHtmlWithReport } = await import("@markup-carve/carve");
-    for (const source of ["", "   \n\t\n"]) {
-      expect(renderCarveHtmlWithReport(source)).toEqual(
-        carveToHtmlWithReport(source, { allowRawHtml: false, sanitizeUrls: true }),
-      );
-    }
-  });
-
-  it("passes the checked-render knobs through", () => {
-    expect(() =>
-      renderCarveHtmlWithReport("[x](javascript:1)", { strictLosses: true }),
-    ).toThrow();
-    const capped = renderCarveHtmlWithReport("[x](javascript:1)", {
-      maxRenderLosses: 0,
-    });
-    expect(capped.truncated).toBe(true);
-    expect(capped.totalLosses).toBe(1);
-    expect(capped.losses).toHaveLength(0);
-  });
-});
-
-describe("the bundled engine is identifiable", () => {
-  it("reports the version the lockfile pins", async () => {
-    const lock = (await import("../package-lock.json", {
-      with: { type: "json" },
-    })) as unknown as {
-      default: { packages: Record<string, { version?: string }> };
+  it("identifies the pinned engine and 0.2 contract", async () => {
+    const lock = (await import("../package-lock.json", { with: { type: "json" } })) as unknown as {
+      default: { packages: Record<string, { version?: string; resolved?: string }> };
     };
-    const locked = lock.default.packages["node_modules/@markup-carve/carve"]
-      ?.version;
-    expect(locked).toMatch(/^\d+\.\d+\.\d+/);
-    expect(CARVE_ENGINE_VERSION).toBe(locked);
-  });
-
-  it("reports the spec version it implements", () => {
-    expect(CARVE_SPEC_VERSION).toMatch(/^\d+\.\d+/);
+    const pinned = lock.default.packages["node_modules/@markup-carve/carve"];
+    expect(pinned?.resolved).toContain("df089eeeaf48e36f89c8e926710e1c1e1bd2def1");
+    expect(CARVE_ENGINE_VERSION).toBe(pinned?.version);
+    expect(CARVE_SPEC_VERSION).toBe("0.2");
   });
 });

@@ -39,7 +39,7 @@ export function useCarveHtml(source: string, options?: CarveOptions): string {
 type CarveOwnProps<E extends ElementType> = {
   /** Carve markup source to render. */
   source: string;
-  /** Options forwarded to carve-js. Defaults are safe-by-default (no raw HTML). */
+  /** Carve 0.2 render options. Raw HTML is disabled by default. */
   options?: CarveOptions;
   /** Wrapper element type. Defaults to `div`. */
   as?: E;
