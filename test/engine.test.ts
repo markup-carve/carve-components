@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { render, renderWithDiagnostics } from "@markup-carve/carve/v2";
+import { render, renderWithDiagnostics } from "@markup-carve/carve";
 import {
   CARVE_ENGINE_VERSION,
   CARVE_SPEC_VERSION,
@@ -111,7 +111,7 @@ describe("Carve 0.2 engine integration", () => {
       default: { packages: Record<string, { version?: string; resolved?: string }> };
     };
     const pinned = lock.default.packages["node_modules/@markup-carve/carve"];
-    expect(pinned?.resolved).toContain("df089eeeaf48e36f89c8e926710e1c1e1bd2def1");
+    expect(pinned?.resolved).toContain("11de2ad3652448277905e0980e72a49936139c0b");
     expect(CARVE_ENGINE_VERSION).toBe(pinned?.version);
     expect(CARVE_SPEC_VERSION).toBe("0.2");
   });

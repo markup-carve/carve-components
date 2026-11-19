@@ -103,7 +103,7 @@ does not load it at runtime: `tsup` bundles the engine into this package's
 which import the engine's `RenderOptions` and `RenderOutput` types, so a
 consumer gets an installed copy that TypeScript resolves. The dependency is
 pinned to a commit on the engine's `next2` branch; it is not a registry release.
-The installed git package builds its `v2` entry during npm installation.
+The installed git package builds its entries during npm installation.
 
 Because the engine is compiled in, read `CARVE_ENGINE_VERSION` and
 `CARVE_SPEC_VERSION` from the component package to identify its engine and
