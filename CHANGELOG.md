@@ -16,6 +16,8 @@ entry of their own.
   `urlPolicy`. The safe defaults disable raw HTML and pin the denied URL schemes.
 - The checked rendering helper now returns the 0.2 diagnostic result with
   `html`, `diagnostics` and `suppressedDiagnostics` fields.
+- Engine: pinned to the renamed carve-js `next2` (11de2ad), which ships 0.2 at
+  the package root; the `/v2` entry is gone.
 
 ## 0.1.4 - 2026-11-12
 

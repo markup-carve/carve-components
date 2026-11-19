@@ -5,7 +5,7 @@ import {
   renderWithDiagnostics,
   type RenderOptions,
   type RenderOutput,
-} from "@markup-carve/carve/v2";
+} from "@markup-carve/carve";
 
 /** Version of the engine bundled into the built components. */
 export const CARVE_ENGINE_VERSION: string = enginePackage.version;
