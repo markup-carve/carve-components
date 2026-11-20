@@ -15,9 +15,20 @@ entry of their own.
 - Component options use the 0.2 `RenderOptions` names, including `rawHtml` and
   `urlPolicy`. The safe defaults disable raw HTML and pin the denied URL schemes.
 - The checked rendering helper now returns the 0.2 diagnostic result with
-  `html`, `diagnostics` and `suppressedDiagnostics` fields.
-- Engine: pinned to the renamed carve-js `next2` (11de2ad), which ships 0.2 at
-  the package root; the `/v2` entry is gone.
+  `html`, `diagnostics` and `suppressedDiagnostics` fields. The 0.1 `value`,
+  `losses`, `totalLosses` and `truncated` fields and the `maxRenderLosses`
+  option are gone.
+
+### Removed
+
+- The `core` entry no longer re-exports the 0.1 engine calls `carveToHtml` and
+  `carveToHtmlWithReport`; it re-exports the 0.2 `render` and
+  `renderWithDiagnostics` instead.
+
+### Engine
+
+- Pinned to carve-js `next2` at `eb2ffc1`, the Milestone 6 engine, which ships
+  0.2 at the package root; the `/v2` entry is gone.
 
 ## 0.1.4 - 2026-11-12
 
