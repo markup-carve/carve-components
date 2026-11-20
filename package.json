@@ -55,10 +55,10 @@
     "check:packed-types": "node scripts/check-packed-types.mjs"
   },
   "dependencies": {
-    "@markup-carve/carve": "git+https://github.com/markup-carve/carve-js.git#eb2ffc1a18943bc3a865639c6481a4c0bc3b87c5"
+    "@markup-carve/carve": "git+https://github.com/markup-carve/carve-js.git#358613b49e0a1116362bf695dc417417adcfb4a6"
   },
   "allowScripts": {
-    "git+https://github.com/markup-carve/carve-js.git#eb2ffc1a18943bc3a865639c6481a4c0bc3b87c5": true
+    "git+https://github.com/markup-carve/carve-js.git#358613b49e0a1116362bf695dc417417adcfb4a6": true
   },
   "peerDependencies": {
     "react": ">=18",
