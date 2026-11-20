@@ -1,9 +1,7 @@
 # carve-components
 
-React and Vue 3 components that render [Carve](https://markup-carve.github.io/carve/)
-markup to safe HTML, powered by carve-js. This fills a gap that the djot
-ecosystem does not cover: ready-made framework components for rendering the
-markup.
+React and Vue 3 components that render Carve 0.2 source to safe HTML, powered
+by the pinned carve-js 0.2 engine branch.
 
 ## Install
 
@@ -21,13 +19,13 @@ ever loading Vue and vice versa.
 ```tsx
 import { Carve, useCarveHtml } from "@markup-carve/carve-components/react";
 
-<Carve source="# Hello\n\n*bold* and /italic/" />
-<Carve source={src} as="article" className="prose" options={{ allowRawHtml: true }} />
+<Carve source="= Hello\n\n*bold* and /italic/" />
+<Carve source={src} as="article" className="prose" options={{ rawHtml: true }} />
 
 const html = useCarveHtml(src); // memoized HTML string
 ```
 
-`<Carve>` accepts `source` (required), `options` (carve-js options), `as`
+`<Carve>` accepts `source` (required), `options` (Carve 0.2 `RenderOptions`), `as`
 (wrapper element, default `div`), plus any extra props (`className`, `id`,
 `style`, ...) and a forwarded `ref` that fall through to the wrapper. The HTML
 is injected via `dangerouslySetInnerHTML`.
@@ -41,7 +39,7 @@ const html = useCarveHtml(() => src);
 </script>
 
 <template>
-  <Carve :source="src" as="article" :options="{ allowRawHtml: true }" />
+  <Carve :source="src" as="article" :options="{ rawHtml: true }" />
 </template>
 ```
 
@@ -56,44 +54,39 @@ Both components are server-render safe: carve-js is isomorphic and there is no
 
 ## Security model
 
-carve-js sanitizes its own output (the project's defenses are normative), so the
-rendered HTML is meant to be injected directly. This library does not re-escape
-it. Two carve-js knobs matter:
+The engine escapes ordinary text and checks link and image URLs. This library
+injects the resulting HTML without another escaping pass. Two render options
+matter:
 
-- **URL sanitization** (`sanitizeUrls`, carve-js default `true`, pinned on
-  here): dangerous link/image schemes (`javascript:`, `vbscript:`, `data:`,
-  `file:`) are blanked to `""`. The link text / image alt still render but are
-  inert.
-- **Raw HTML** (`allowRawHtml`): carve-js defaults this to `true` to match its
-  conformance corpus, which means the explicit raw-HTML author forms
-  (`` `…`{=html} `` inline and ` ```=html ` block) emit verbatim and CAN inject
-  a live `<script>`. **This library overrides the default to `false`** so the
-  components are safe by default for untrusted input - raw HTML is escaped to
-  text. A bare `<script>` line in plain Carve is always escaped regardless of
-  this flag.
+- **URL policy** (`urlPolicy`): the default deny list blanks dangerous schemes,
+  including `javascript:`, `vbscript:`, `data:` and `file:`, in links and images.
+  The component pins that list through the engine's `DEFAULT_DENIED_SCHEMES`.
+  A caller can supply a different `{ deny: [...] }` or `{ allow: [...] }` policy.
+- **Raw HTML** (`rawHtml`): the 0.2 default is `false`, and this package pins it
+  off. Explicit raw HTML forms are escaped as text. Setting `rawHtml: true`
+  passes author supplied HTML through unchanged and requires trusted input.
 
 If you fully trust the input and want raw-HTML passthrough, pass
-`options={{ allowRawHtml: true }}`.
+`options={{ rawHtml: true }}`.
 
 ### Knowing what was blanked
 
 A blanked URL leaves no trace in the HTML beyond an empty `href`.
-`renderCarveHtmlWithReport` returns the same HTML with carve-js's render-loss
-report beside it, so an application can log or warn instead of silently
-serving an inert link.
+`renderCarveHtmlWithReport` returns the engine's `RenderOutput`: `html`,
+`diagnostics` and `suppressedDiagnostics`. Diagnostics include parse messages
+and render losses, so an application can log or warn about denied destinations.
 
 ```ts
 import { renderCarveHtmlWithReport } from "@markup-carve/carve-components/core";
 
-const { value, losses } = renderCarveHtmlWithReport(source);
-for (const loss of losses) {
-  // { code: "destination-denied", message: "Blanked a denied destination scheme", ... }
-  console.warn(loss.code, loss.message, loss.pos);
+const { html, diagnostics } = renderCarveHtmlWithReport(source);
+for (const entry of diagnostics) {
+  if (entry.channel === "render-loss") console.warn(entry.code, entry.message, entry.range);
 }
 ```
 
-`strictLosses: true` throws instead of returning, and `maxRenderLosses` caps
-the rows while `totalLosses` keeps the full count.
+`strictLosses: true` throws from `renderCarveHtml`; the diagnostic call returns
+an empty `html` string and error diagnostics when content is lost.
 
 | Hostile input                          | Default component output         |
 | -------------------------------------- | -------------------------------- |
@@ -107,15 +100,14 @@ the rows while `totalLosses` keeps the full count.
 carve-js (`@markup-carve/carve`) is a regular `dependency`, but the JavaScript
 does not load it at runtime: `tsup` bundles the engine into this package's
 `dist/` (`noExternal`). The dependency is there for the type declarations,
-which import the engine's types (`CarveOptions`, `carveToHtml`, ...), so a
-consumer gets an installed copy of carve-js that TypeScript resolves. Bump the
-range in `dependencies`, refresh the lockfile and rebuild to pick up a newer
-engine.
+which import the engine's `RenderOptions` and `RenderOutput` types, so a
+consumer gets an installed copy that TypeScript resolves. The dependency is
+pinned to a commit on the engine's `next2` branch; it is not a registry release.
+The installed git package builds its entries during npm installation.
 
-Because the engine is compiled in, its version cannot be read from the
-consumer's dependency tree: the installed copy can be a newer release within
-the range than the one in `dist/`. `CARVE_ENGINE_VERSION` (and `CARVE_SPEC_VERSION`)
-report it, from every entry point:
+Because the engine is compiled in, read `CARVE_ENGINE_VERSION` and
+`CARVE_SPEC_VERSION` from the component package to identify its engine and
+specification line:
 
 ```ts
 import { CARVE_ENGINE_VERSION } from "@markup-carve/carve-components/react";
