@@ -111,7 +111,7 @@ describe("Carve 0.2 engine integration", () => {
       default: { packages: Record<string, { version?: string; resolved?: string }> };
     };
     const pinned = lock.default.packages["node_modules/@markup-carve/carve"];
-    expect(pinned?.resolved).toContain("358613b49e0a1116362bf695dc417417adcfb4a6");
+    expect(pinned?.resolved).toContain("edd6e00a76729cb086dcb15c38818e1cc34159fb");
     expect(CARVE_ENGINE_VERSION).toBe(pinned?.version);
     expect(CARVE_SPEC_VERSION).toBe("0.2");
   });
