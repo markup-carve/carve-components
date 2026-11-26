@@ -3,7 +3,7 @@
 // `skipLibCheck: false`. The published declarations import the carve-js engine,
 // so it must arrive as a dependency of the tarball. Run after `npm run build`.
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,7 +28,12 @@ try {
   mkdirSync(project);
   writeFileSync(
     join(project, "package.json"),
-    JSON.stringify({ name: "consumer", private: true, type: "module" }),
+    JSON.stringify({
+      name: "consumer",
+      private: true,
+      type: "module",
+      allowScripts: { [pkg.dependencies[ENGINE]]: true },
+    }),
   );
   run(
     "npm",
@@ -36,7 +41,7 @@ try {
       "install",
       "--no-audit",
       "--no-fund",
-      "--ignore-scripts",
+      "--allow-git=all",
       tarball,
       `typescript@${dev.typescript}`,
       `react@${dev.react}`,
@@ -72,19 +77,20 @@ try {
     }),
   );
   const consumer = (load) => `
-${load("core", "{ carveToHtml, carveToHtmlWithReport, renderCarveHtml, type CarveOptions }")}
+${load("core", "{ render, renderWithDiagnostics, renderCarveHtml, renderCarveHtmlWithReport, type CarveOptions, type CarveRenderResult }")}
 ${load("react", "{ Carve as ReactCarve }")}
 ${load("vue", "{ Carve as VueCarve }")}
 
-const options: CarveOptions = { allowRawHtml: false, sanitizeUrls: true };
-const html: string = carveToHtml("*hi*", options);
-const report = carveToHtmlWithReport("*hi*", options);
-const value: string = report.value;
+const options: CarveOptions = { rawHtml: false, urlPolicy: { deny: ["javascript"] } };
+const html: string = render("*hi*", options);
+const report: CarveRenderResult = renderWithDiagnostics("*hi*", options);
+const value: string = report.html;
 const safe: string = renderCarveHtml("*hi*", options);
+const checked: CarveRenderResult = renderCarveHtmlWithReport("*hi*", options);
 // Fails as an unused directive if the option types collapsed to \`any\`.
-// @ts-expect-error sanitizeUrls is a boolean
-const wrong: CarveOptions = { sanitizeUrls: "yes" };
-export const used = [html, value, safe, wrong, ReactCarve, VueCarve];
+// @ts-expect-error urlPolicy is an object
+const wrong: CarveOptions = { urlPolicy: "yes" };
+export const used = [html, value, safe, checked, wrong, ReactCarve, VueCarve];
 `;
   writeFileSync(
     join(project, "esm.ts"),
@@ -102,7 +108,7 @@ export const used = [html, value, safe, wrong, ReactCarve, VueCarve];
     failed = true;
   }
 } finally {
-  rmSync(work, { recursive: true, force: true });
+  console.log(`Packed type check workspace: ${work}`);
 }
 
 if (failed) {

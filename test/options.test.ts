@@ -17,7 +17,7 @@ import { SAFE_DEFAULTS, renderCarveHtml } from "../src/core/index.js";
 afterEach(cleanup);
 
 // A caller option only proves it reached the engine if the engine renders
-// something it cannot render without it. `allowRawHtml` is that lever: the
+// something it cannot render without it. `rawHtml` is that lever: the
 // library's own default escapes the raw-HTML author form, so a live <b> in the
 // output is only possible when the option travelled the whole way.
 const RAW = "`<b>live</b>`{=html}";
@@ -25,13 +25,13 @@ const RAW = "`<b>live</b>`{=html}";
 describe("options reach the engine", () => {
   it("SAFE_DEFAULTS escape raw HTML, and a caller option overrides them", () => {
     expect(renderCarveHtml(RAW)).toContain("&lt;b&gt;");
-    expect(renderCarveHtml(RAW, { allowRawHtml: true })).toContain("<b>live</b>");
-    expect(SAFE_DEFAULTS.allowRawHtml).toBe(false);
+    expect(renderCarveHtml(RAW, { rawHtml: true })).toContain("<b>live</b>");
+    expect(SAFE_DEFAULTS.rawHtml).toBe(false);
   });
 
   it("React <Carve> forwards the options prop", () => {
     const { container } = render(
-      createElement(ReactCarve, { source: RAW, options: { allowRawHtml: true } }),
+      createElement(ReactCarve, { source: RAW, options: { rawHtml: true } }),
     );
     expect(container.querySelector("b")?.textContent).toBe("live");
   });
@@ -44,7 +44,7 @@ describe("options reach the engine", () => {
   it("React useCarveHtml forwards options", () => {
     function Probe() {
       return createElement("output", {
-        "data-html": useReactCarveHtml(RAW, { allowRawHtml: true }),
+        "data-html": useReactCarveHtml(RAW, { rawHtml: true }),
       });
     }
     const { container } = render(createElement(Probe));
@@ -55,7 +55,7 @@ describe("options reach the engine", () => {
 
   it("Vue <Carve> forwards the options prop", () => {
     const wrapper = mount(VueCarve, {
-      props: { source: RAW, options: { allowRawHtml: true } },
+      props: { source: RAW, options: { rawHtml: true } },
     });
     expect(wrapper.find("b").exists()).toBe(true);
     expect(wrapper.find("b").text()).toBe("live");
@@ -69,16 +69,16 @@ describe("options reach the engine", () => {
   it("Vue <Carve> re-renders when the options prop changes", async () => {
     const wrapper = mount(VueCarve, { props: { source: RAW } });
     expect(wrapper.find("b").exists()).toBe(false);
-    await wrapper.setProps({ options: { allowRawHtml: true } });
+    await wrapper.setProps({ options: { rawHtml: true } });
     expect(wrapper.find("b").exists()).toBe(true);
   });
 
   it("Vue useCarveHtml forwards options as a value, a ref and a getter", () => {
-    const opts = { allowRawHtml: true };
+    const opts = { rawHtml: true };
     expect(useVueCarveHtml(RAW, opts).value).toContain("<b>live</b>");
     expect(useVueCarveHtml(RAW, ref(opts)).value).toContain("<b>live</b>");
     expect(useVueCarveHtml(RAW, () => opts).value).toContain("<b>live</b>");
-    const reactive = ref<{ allowRawHtml: boolean } | undefined>(undefined);
+    const reactive = ref<{ rawHtml: boolean } | undefined>(undefined);
     const html = computed(() => useVueCarveHtml(RAW, reactive).value);
     expect(html.value).not.toContain("<b>live</b>");
     reactive.value = opts;
@@ -93,7 +93,7 @@ describe("React and Vue render the same HTML", () => {
     link: "[Carve](https://example.com)",
     denied: "[x](javascript:alert(1))",
     hostile: "```=html\n<script>alert(1)</script>\n```",
-    table: "| a | b |\n|---|---|\n| 1 | 2 |",
+    table: "| a | b |\n| 1 | 2 |",
     "native table": "|= a |= b |\n| 1 | 2 |",
     footnote: "x[^1]\n\n[^1]: note",
   };

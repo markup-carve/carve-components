@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, next2]
   pull_request:
-    branches: [main]
+    branches: [main, next2]
   workflow_dispatch:
 
 concurrency:
@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 22]
+        node-version: [20, 22, 24]
 
     steps:
       - uses: actions/checkout@v7
