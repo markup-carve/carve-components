@@ -55,6 +55,14 @@ jobs:
             echo "::error::${pkg} is not a dependency of this repo - this workflow is watching nothing"
             exit 1
           fi
+          pin="$(node scripts/git-engine-pin.mjs manifest)"
+          if [ -n "${pin}" ]; then
+            {
+              echo "pin=${pin}"
+              echo "range=${range}"
+            } >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
           # `npm view <pkg>@<range> version` prints ONE bare version when the
           # range matches a single release, and `<pkg>@<v> '<v>'` lines when it
           # matches several. Taking the last WHITESPACE-SEPARATED FIELD reads
@@ -83,9 +91,11 @@ jobs:
           if [ "${resolved}" != "${latest}" ]; then
             echo "::warning::${pkg} ${latest} is published, but the range ${range} takes ${resolved} - a major-bumped release does not arrive on its own"
           fi
-          echo "latest=${latest}" >> "${GITHUB_OUTPUT}"
-          echo "range=${range}" >> "${GITHUB_OUTPUT}"
-          echo "resolved=${resolved}" >> "${GITHUB_OUTPUT}"
+          {
+            echo "latest=${latest}"
+            echo "range=${range}"
+            echo "resolved=${resolved}"
+          } >> "${GITHUB_OUTPUT}"
 
       - name: Compare the LOCKFILE against what the range resolves to
         run: |
@@ -93,6 +103,10 @@ jobs:
           pkg='@markup-carve/carve'
           range='${{ steps.registry.outputs.range }}'
           resolved='${{ steps.registry.outputs.resolved }}'
+          if [ -n '${{ steps.registry.outputs.pin }}' ]; then
+            node scripts/git-engine-pin.mjs lock
+            exit 0
+          fi
           # The step above reads package.json. CI installs with "npm ci", which
           # reads package-lock.json and ignores the range entirely - so the
           # range being current is not evidence that anything built here is.
@@ -136,6 +150,23 @@ jobs:
       - name: Compare the published engine against carve-js main
         run: |
           set -euo pipefail
+          pin='${{ steps.registry.outputs.pin }}'
+          if [ -n "${pin}" ]; then
+            if ! git -C carve-js cat-file -e "${pin}^{commit}"; then
+              echo "::error::carve-js pin ${pin} is not a commit in the engine repository"
+              exit 1
+            fi
+            if ! git -C carve-js merge-base --is-ancestor "${pin}" origin/main; then
+              echo "::error::carve-js pin ${pin} is not reachable from main"
+              exit 1
+            fi
+            behind="$(git -C carve-js rev-list --count "${pin}..origin/main")"
+            echo "carve-js pin ${pin}: reachable from main, ${behind} commits behind"
+            if [ "${behind}" -gt 0 ]; then
+              echo "::warning::carve-js pin ${pin} is ${behind} commits behind main"
+            fi
+            exit 0
+          fi
           latest='${{ steps.registry.outputs.latest }}'
           tag=""
           for candidate in "${latest}" "v${latest}"; do
